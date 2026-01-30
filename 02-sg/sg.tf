@@ -166,3 +166,13 @@ resource "aws_security_group_rule" "bastion_inbound_ssh" {
   cidr_blocks       = ["0.0.0.0/0"] #source is anywhere
   description       = "Allow SSH access from anywhere"
 }
+
+resource "aws_security_group_rule" "app_alb_inbound_from_vpn" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  source_security_group_id = module.vpn_sg.sg_id #source is VPN SG
+  security_group_id        = module.alb_sg.sg_id #target is ALB SG
+  description              = "Allow ALB access from VPN SG"  
+}
