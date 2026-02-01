@@ -14,14 +14,24 @@ module "backend_instance" {
   )
 }
 
-resource "null_resource" "cluster" {
+resource "null_resource" "backend_setup" {
   triggers = {
-    backend_instance_id = module.backend_instance.id # to force recreation if instance changes
+    backend_instance_id = module.backend_instance.id #this will trigger recreation if backend instance changes
   }
   connection {
     type = "ssh"
     user = "ec2-user"
     password = "DevOps321"
     host = module.backend_instance.private_ip # connect via private IP
-  } 
+  }
+  provisioner "file" {
+    source = "backend.sh"
+    destination = "/tmp/backend.sh"
+  }
+  provisioner "remote-exec" {
+    inline = [ 
+      "chmod +x /tmp/${var.common_tags.Component}.sh", # make the script executable
+      "sudo sh /tmp/${var.common_tags.Component}.sh ${var.common_tags.Component} ${var.environment}" # execute the script with component and environment as arguments
+     ]
+  }
 }

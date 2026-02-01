@@ -1,5 +1,6 @@
 # Create a key pair for vpn instance
 resource "aws_key_pair" "vpn" {
+  key_name = "openvpn"
   public_key = file(var.public_key_path)
 }
 
@@ -7,6 +8,7 @@ resource "aws_key_pair" "vpn" {
 module "vpn_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws" # using EC2 instance module
   name = "${var.project_name}-${var.environment}-vpn"
+  key_name = aws_key_pair.vpn.key_name
   instance_type = "t3.micro"
   vpc_security_group_ids = [data.aws_ssm_parameter.vpn_sg_id.value]
   subnet_id = local.public_subnet_id

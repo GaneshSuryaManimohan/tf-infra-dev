@@ -70,7 +70,7 @@ module "zone" {
   records = {
     db = {
       zone_id = data.aws_route53_zone.existing.zone_id
-      name    = "db"
+      name    = "db-${var.environment}"
       type    = "CNAME"
       ttl     = 1
       records = [module.db.db_instance_address]
