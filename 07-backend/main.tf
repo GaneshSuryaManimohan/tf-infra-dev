@@ -14,6 +14,7 @@ module "backend_instance" {
   )
 }
 
+# Uses a null_resource with SSH provisioners to copy and execute the backend setup script on the EC2 instance, and re-runs only when the backend instance is replaced
 resource "null_resource" "backend_setup" {
   triggers = {
     backend_instance_id = module.backend_instance.id #this will trigger recreation if backend instance changes
@@ -30,24 +31,27 @@ resource "null_resource" "backend_setup" {
   }
   provisioner "remote-exec" {
     inline = [ 
-      "chmod +x /tmp/${var.common_tags.Component}.sh", # make the script executable
-      "sudo sh /tmp/${var.common_tags.Component}.sh ${var.common_tags.Component} ${var.environment}" # execute the script with component and environment as arguments
+      "chmod +x /tmp/backend.sh", # make the script executable
+      "sudo bash /tmp/backend.sh ${var.common_tags.Component} ${var.environment}" # execute the script with component and environment as arguments
      ]
   }
 }
 
+# Stops the backend EC2 instance after provisioning completes to ensure setup runs only once
 resource "aws_ec2_instance_state" "backend_instance" {
   instance_id = module.backend_instance.id
   state = "stopped"
-  depends_on = [ null_resource.backend_setup ] #this stops the server when null resource provisioning is completed
+  depends_on = [ null_resource.backend_setup ]
 }
 
+# Create a reusable AMI from the backend EC2 instance after it has been cleanly stopped
 resource "aws_ami_from_instance" "backend_instance" {
   name = "${var.project_name}-${var.environment}-backend"
   source_instance_id = module.backend_instance.id
   depends_on = [ aws_ec2_instance_state.backend_instance ]
 }
 
+# Terminates the backend EC2 instance via AWS CLI after the AMI has been successfully created
 resource "null_resource" "backend_delete" {
   triggers = {
     instance_id = module.backend_instance.id
@@ -64,6 +68,7 @@ resource "null_resource" "backend_delete" {
   depends_on = [ aws_ami_from_instance.backend_instance ]
 }
 
+# Defines an ALB target group for the backend service with HTTP health checks on /health
 resource "aws_lb_target_group" "backend" {
   name = "${var.project_name}-${var.environment}-${var.common_tags.Component}"
   port = 8080
@@ -79,6 +84,7 @@ resource "aws_lb_target_group" "backend" {
   }
 }
 
+# Defines a launch template for backend EC2 instances using the custom AMI and standard instance configuration
 resource "aws_launch_template" "backend" {
   name = "${var.project_name}-${var.environment}-backend"
   image_id = aws_ami_from_instance.backend_instance.id
@@ -97,6 +103,7 @@ resource "aws_launch_template" "backend" {
   }
 }
 
+# Manages backend EC2 instances using an Auto Scaling Group with rolling updates triggered by launch template changes
 resource "aws_autoscaling_group" "backend" {
   name = "${var.project_name}-${var.environment}-backend"
   max_size = 5
@@ -104,6 +111,7 @@ resource "aws_autoscaling_group" "backend" {
   health_check_grace_period = 60
   health_check_type = "ELB"
   desired_capacity = 1
+  target_group_arns = [aws_lb_target_group.backend.arn]
   launch_template {
     id = aws_launch_template.backend.id
     version = "$Latest"
@@ -130,5 +138,35 @@ resource "aws_autoscaling_group" "backend" {
     key = "Project"
     value = "${var.project_name}"
     propagate_at_launch = false
+  }
+}
+
+# Configures target-tracking scaling for the backend ASG based on average CPU utilization
+resource "aws_autoscaling_policy" "backend" {
+  name = "${var.project_name}-${var.environment}-backend"
+  policy_type = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.backend.name
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 10.0
+  }
+}
+
+
+resource "aws_lb_listener_rule" "backend" {
+  listener_arn = data.aws_ssm_parameter.app_alb_listener_arn.value
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend.arn
+  }
+
+  condition {
+    host_header {
+      values = ["backend.app-${var.environment}.${var.zone_name}"]
+    }
   }
 }

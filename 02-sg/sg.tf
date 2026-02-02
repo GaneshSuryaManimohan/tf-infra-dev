@@ -62,6 +62,15 @@ module "vpn_sg" {
   inbound_rules = var.vpn_sg_rules
 }
 
+module "web_alb" {
+  source = "git::https://github.com/GaneshSuryaManimohan/tf-aws-sg-module.git?ref=main"
+  project_name = var.project_name
+  sg_name = "web-alb"
+  environment = var.environment
+  sg_description = "SG for Web ALB Instances"
+  vpc_id = data.aws_ssm_parameter.vpc_id.value
+  common_tags = var.common_tags
+}
 
 #### Security Group Rules ####
 resource "aws_security_group_rule" "db_inbound_from_backend" {
@@ -175,4 +184,32 @@ resource "aws_security_group_rule" "app_alb_inbound_from_vpn" {
   source_security_group_id = module.vpn_sg.sg_id #source is VPN SG
   security_group_id        = module.alb_sg.sg_id #target is ALB SG
   description              = "Allow ALB access from VPN SG"  
+}
+
+resource "aws_security_group_rule" "app_alb_inbound_from_frontend" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  source_security_group_id = module.frontend_sg.sg_id #source is VPN SG
+  security_group_id        = module.alb_sg.sg_id #target is ALB SG
+  description              = "Allow ALB access from VPN SG"  
+}
+
+resource "aws_security_group_rule" "web_alb_public" {
+  type = "ingress"
+  from_port = 80
+  to_port = 80
+  protocol = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = module.web_alb.sg_id
+}
+
+resource "aws_security_group_rule" "web_alb_public_https" {
+  type = "ingress"
+  from_port = 443
+  to_port = 443
+  protocol = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = module.web_alb.sg_id
 }

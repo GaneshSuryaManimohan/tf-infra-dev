@@ -33,7 +33,7 @@ module "zone" {
   records = {
     alb = {
       zone_id = data.aws_route53_zone.existing.zone_id
-      name    = "*.app.${var.environment}"
+      name    = "*.app-${var.environment}"
       type    = "A"
       allow_overwrite = true
       alias = {
