@@ -19,6 +19,11 @@
     6. Established Peering connection between *expense-dev-vpc* and *default-vpc* and routes are created for peering.
 
 #### Security Groups:
+
+<img src="sg-rules.svg" 
+     alt="Infrastructure Architecture"
+     width="900">
+
 * We created security groups
     1. *expense-dev-backend*    : Security group for backend servers
     2. *expense-dev-bastion*    : Security group for bastion servers
@@ -27,12 +32,17 @@
     5. *expense-dev-vpn*        : Security group for VPN
     6. *expense-dev-web-alb*    : SG for Web ALB Instances
     7. *expense-dev-app-alb*    : Security group for App ALB
+
 * Created security group rules:
-    1. *expense-dev-app-alb* : Port: 80, Inbound from *expense-dev-frontend* & *expense-dev-vpn* ; Outboud: Eveywhere (0.0.0.0/0)
-    2. *expense-dev-web-alb* : Port: 80,443, Inbound from everywhere HTTP & HTTPS; Outbound: Everywhere
+    1. *expense-dev-app-alb* : Port: 80, Inbound from `expense-dev-frontend & expense-dev-vpn` ; Outboud: Eveywhere (0.0.0.0/0)
+    2. *expense-dev-web-alb* : Port: 80,443, Inbound from everywhere HTTP & HTTPS. Outbound: Everywhere
     3. *expense-dev-vpn*     : Port: 22,443,943,1194. Inbound & Outbound from everywhere 
-    4. *expense-dev-frontend* : Port: 22,80. Inbound from *expense-dev-bastion* on port 22 & Outbound:Everywhere
-    5. *expense-dev-db*      : Port: 3306, Inbound from `expense-dev-bastion, expense-dev-backend, & expense-dev-vpn` 
+    4. *expense-dev-frontend* : Port: 22,80. Inbound from `expense-dev-bastion` on port 22 & Outbound:Everywhere
+    5. *expense-dev-db*      : Port: 3306, Inbound from `expense-dev-bastion, expense-dev-backend, & expense-dev-vpn`. Outbound: Everywhere
+    6. *expense-dev-bastion* : Port: 22, Inbound & Outbound from Everywhere
+    7. *expense-dev-backend* : Inbound: `expense-dev-vpn & expense-dev-bastion` on port 22; `expense-dev-app-alb & expense-dev-vpn` on port 8080. Outbound Everywhere.
+
+#### 
 
 
 
