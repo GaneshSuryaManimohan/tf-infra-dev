@@ -14,3 +14,7 @@ data "aws_route53_zone" "existing" {
   name         = var.zone_name
   private_zone = false
 }
+
+data "aws_ssm_parameter" "acm_certificate_arn" {
+  name = "/${var.project_name}/${var.environment}/acm_certificate_arn"
+}

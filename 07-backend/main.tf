@@ -5,7 +5,7 @@ module "backend_instance" {
   vpc_security_group_ids = [data.aws_ssm_parameter.backend_sg_id.value]
   subnet_id = local.private_subnet_id
   ami = data.aws_ami.ami_info.id
-  user_data = file("backend.sh")
+  #user_data = file("backend.sh")
   tags = merge(
     var.common_tags,
     {
