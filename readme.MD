@@ -42,21 +42,30 @@
     6. *expense-dev-bastion* : Port: 22, Inbound & Outbound from Everywhere
     7. *expense-dev-backend* : Inbound: `expense-dev-vpn & expense-dev-bastion` on port 22; `expense-dev-app-alb & expense-dev-vpn` on port 8080. Outbound Everywhere.
 
-#### 
+#### Bastion:
+* We created a **Bastion Server** in public subnet and installed MySQL on the server using *UserData*. This server connects to the Backend instances that are in Private Subnet. Later we moved to VPN connection instead of Bastion Server.
 
 
+#### DB (Amazon RDS):
+1.  Using Terraform AWS RDS Module: terraform-aws-modules/rds/aws we created DB Instance.
+2. Created Route53 *db-dev.surya-devops.site* record for the RDS endpoint in existing hosted zone.
 
+#### OpenVPN:
+1. Used AWS-Marketplace AMI for OpenVPN. 
+2. Launched in public subnet and associated the security group.
 
-    
+#### APP ALB:
+* Created Application Load Balancer **expense-dev-app-alb** 
+* Created a HTTP listener and associated its arn with *expense-dev-app-alb* arn
+* Created a fixed response "This is the default response for the application load balancer" for this http listener.
 
-
-* For expense-dev-app-alb 2 listener rules:
+* For expense-dev-app-alb there are 2 listener rules:
 
     1. If Host header (value) = backend.app-dev.surya-devops.site then:
         Forward to target group "expense-dev-backend"
         where we can check http://backend.app-dev.surya-devops.site/health , http://backend.app-dev.surya-devops.site/transaction etc. 
     
-    2. Last Default If no other rule applies then it will return fixed response:
+    2. Last (Default): If no other rule applies then it will return fixed response:
         "This is the default response for the application load balancer"
 
 
