@@ -1,7 +1,10 @@
-* Infra Architecture
-![Infra Architecture](tf-infra-dev.drawio.svg)
+## 🏗️ Infra Architecture
 
-
+<p align="center">
+  <img src="tf-infra-dev.drawio.svg"
+       alt="Infrastructure Architecture"
+       width="900">
+</p>
 
 
 * For expense-dev-app-alb 2 listener rules:
