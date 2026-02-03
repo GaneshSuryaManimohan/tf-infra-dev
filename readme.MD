@@ -7,6 +7,39 @@
 </p>
 
 
+#### VPC:
+* We created a VPC with name **expense-dev-vpc** and inside VPC:
+    1. We created 3 subnets:
+        - *Public, Private, & Database* subnets in 2 availability zones (us-east-1a & us-east-1b)
+    2. We created *Internet Gateway* and attached to VPC
+    3. We created route tables:
+        - *Public, Private, & Database* and their association
+    4. We created a *NAT Gateway*
+    5. We created routes for the route tables
+    6. Established Peering connection between *expense-dev-vpc* and *default-vpc* and routes are created for peering.
+
+#### Security Groups:
+* We created security groups
+    1. *expense-dev-backend*    : Security group for backend servers
+    2. *expense-dev-bastion*    : Security group for bastion servers
+    3. *expense-dev-db*         : Security group for database servers
+    4. *expense-dev-frontend*   : Security group for frontend servers
+    5. *expense-dev-vpn*        : Security group for VPN
+    6. *expense-dev-web-alb*    : SG for Web ALB Instances
+    7. *expense-dev-app-alb*    : Security group for App ALB
+* Created security group rules:
+    1. *expense-dev-app-alb* : Port: 80, Inbound from *expense-dev-frontend* & *expense-dev-vpn* ; Outboud: Eveywhere (0.0.0.0/0)
+    2. *expense-dev-web-alb* : Port: 80,443, Inbound from everywhere HTTP & HTTPS; Outbound: Everywhere
+    3. *expense-dev-vpn*     : Port: 22,443,943,1194. Inbound & Outbound from everywhere 
+    4. *expense-dev-frontend* : Port: 22,80. Inbound from *expense-dev-bastion* on port 22 & Outbound:Everywhere
+    5. *expense-dev-db*      : Port: 3306, Inbound from `expense-dev-bastion, expense-dev-backend, & expense-dev-vpn` 
+
+
+
+
+    
+
+
 * For expense-dev-app-alb 2 listener rules:
 
     1. If Host header (value) = backend.app-dev.surya-devops.site then:
