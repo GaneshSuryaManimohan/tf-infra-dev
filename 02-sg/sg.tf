@@ -166,6 +166,16 @@ resource "aws_security_group_rule" "frontend_inbound_from_bastion" {
   description              = "Allow SSH access from bastion SG"
 }
 
+resource "aws_security_group_rule" "frontend_inbound_from_public" {
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  cidr_blocks              = ["0.0.0.0/0"] #source is public
+  security_group_id        = module.frontend_sg.sg_id #target is frontend SG
+  description              = "Allow SSH access from public to frontend"
+}
+
 resource "aws_security_group_rule" "bastion_inbound_ssh" {
   type              = "ingress"
   from_port         = 22
