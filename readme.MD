@@ -182,6 +182,150 @@ This configuration provisions a public Application Load Balancer (ALB) with HTTP
 
     2. If https://web-dev.surya-devops.site/ == on HTTPS (port: 443) then it will return fixed response:
         "This is the default response for the WEB ALB HTTPS"
-    
+
+
+#### Frontend Infrastructure – Terraform
+This module provisions a scalable frontend application infrastructure on AWS using Terraform.
+It follows a golden AMI + Auto Scaling Group pattern behind an Application Load Balancer (ALB).
+
+    📌 Architecture Overview
+* The infrastructure is built in the following stages:
+* Launch a temporary EC2 instance for frontend setup
+* Provision the instance using a shell script (frontend.sh)
+* Stop the instance and create a custom AMI
+* Terminate the temporary EC2 instance
+* Use the AMI in a Launch Template
+* Run the frontend using an Auto Scaling Group (ASG)
+* Register instances with an ALB Target Group
+* Configure host-based routing using an ALB listener rule
+* Enable CPU-based auto scaling
+
+    🧱 Resources Created
+##### EC2 & AMI
+* Temporary EC2 instance using terraform-aws-modules/ec2-instance
+* Custom frontend AMI created from the configured instance
+* Instance is stopped before AMI creation to ensure consistency
+
+##### Auto Scaling
+* Launch Template using the custom AMI
+* Auto Scaling Group:
+    1. Min size: 1
+    2. Max size: 5
+    3. Desired capacity: 1
+    4. Rolling instance refresh on launch template updates
+
+##### Load Balancing
+* ALB Target Group (HTTP :80)
+* Health check on /
+* Host-based routing: `web-<environment>.<zone_name>`
+
+##### Scaling Policy
+* Target tracking policy based on: `ASGAverageCPUUtilization = 10%`
+
+    ⚙️ Provisioning Flow
+EC2 (temporary)
+   ↓
+frontend.sh provisioning
+   ↓
+Instance stopped
+   ↓
+AMI created
+   ↓
+Instance terminated
+   ↓
+Launch Template
+   ↓
+Auto Scaling Group
+   ↓
+ALB Target Group
+
+    🔐 Connectivity & Provisioning
+
+* SSH-based provisioning using null_resource
+
+* Script execution via: `sudo bash /tmp/frontend.sh <component> <environment>`
+
+* Provisioning re-runs only if the EC2 instance is replaced, controlled via triggers
+
+⚠️ Note: SSH password authentication is used here for simplicity.
+For production, prefer SSH key pairs or AWS SSM Session Manager.
+
+📥 Prerequisites
+
+* Terraform >= 1.x
+* AWS CLI configured with appropriate permissions
+* Existing resources stored in SSM Parameter Store:
+* VPC ID
+* Public subnet IDs
+* Frontend security group ID
+* ALB listener ARN
+* Internet access from public subnet
+* `frontend.sh` script present in the same directory
+
+⚠️ Important Notes
+
+* null_resource with provisioners is not recommended for long-term ASG workloads
+* This approach is acceptable for AMI baking, but consider:
+    1. cloud-init
+    2. Packer
+    3. CI/CD-based AMI pipelines
+* The AMI name must be unique per region
+* Manual changes to instances may be overwritten by ASG refresh
+
+####   🌐 Nginx Reverse Proxy Configuration (Frontend)
+The frontend application uses Nginx as a reverse proxy to route API traffic to the backend service and expose a lightweight health endpoint for load balancer checks.
+
+🔧 Nginx Configuration Snippet
+proxy_http_version 1.1;
+
+location /api/ {
+  proxy_pass http://{{BACKEND_HOST_URL}}/;
+}
+
+location /health {
+  stub_status on;
+  access_log off;
+}
+
+* Routes all /api/* requests from the frontend to the backend service
+Examaple:
+
+When we add an expense on the frontend app `Expense APP` the request
+https://web-dev.surya-devops.site/api/transaction will route to {{BACKEND_HOST_URL}} == backend.app-dev.surya-devops.site
+
+* Backend ALB DNS name or
+* Backend internal load balancer / service endpoint
+* Keeps frontend and backend loosely coupled
+
+/health Endpoint
+location /health {
+  stub_status on;
+  access_log off;
+}
+
+* Lightweight endpoint used for:
+    1. ALB health checks
+    2. Instance liveness validation
+* stub_status provides Nginx internal metrics
+* Access logging disabled to reduce noise
+
+    🩺 Load Balancer Health Checks
+The ALB target group health check is aligned with this configuration:
+* Path: /health
+* Protocol: HTTP
+* Port: 80
+* Expected response: 200
+
+This ensures:
+* Only healthy frontend instances receive traffic
+* Fast detection of failed instances during ASG refresh
+
+⚠️ Important Notes
+* Ensure ngx_http_stub_status_module is enabled in the Nginx build
+* BACKEND_HOST_URL must be reachable from frontend instances
+* For HTTPS backends, update proxy_pass accordingly:
+    proxy_pass https://backend.example.com;
+
+
 
 
