@@ -427,3 +427,33 @@ locations = ["US", "IN", "GB", "DE"]
 
 * Content is served only to these countries
 * Requests from other regions are blocked
+
+🔑 SSL / Certificate Management
+
+* Uses ACM certificate from SSM Parameter Store
+* Certificate must: Be in us-east-1 (CloudFront requirement)
+
+* Cover the alias domain: web-<component>.<zone_name> == `web-cdn.surya-devops.site`
+
+* ssl_support_method = "sni-only"
+
+
+🌐 DNS Configuration (Route 53)
+
+* Existing hosted zone `surya-devops.site` is reused
+
+* Alias record: web-cdn.<zone_name> == `web-cdn.surya-devops.site`
+
+* Points to:
+    - CloudFront domain name
+    - CloudFront hosted zone ID
+
+Benefits:
+* No DNS TTL delays
+* AWS-native health awareness
+
+🏷️ Tagging Strategy
+
+Common tags applied to CloudFront distribution
+
+Resource name includes: <project>-<environment>
