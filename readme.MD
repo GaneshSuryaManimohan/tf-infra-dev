@@ -335,18 +335,9 @@ This Terraform configuration provisions an AWS CloudFront distribution in front 
 It is designed to improve performance, security, and scalability for frontend traffic.
 
     📌 Architecture Overview
-User -> CloudFront (CDN) -> Frontend ALB -> https://web-dev.surya-devops.site/ -> Frontend Target group on port 80 -> if /api/ -> Backend Load Balancer (backend.app-dev.surya-devops.site) -> Backend Target Group on port 80 -> Database
+    
+User → CloudFront (CDN) → Frontend ALB → web-dev.surya-devops.site → Frontend TG :80 → /api → Backend ALB (backend.app-dev.surya-devops.site) → Backend TG :80 → Database
 
-```mermaid
-flowchart LR
-    User --> CloudFront[CloudFront CDN]
-    CloudFront -->|HTTPS| FrontendALB[Frontend ALB :443]
-    FrontendALB --> FrontendTG[Frontend Target Group :80]
-    FrontendTG --> Nginx[Nginx Frontend]
-    Nginx -->|/api| BackendALB[Backend ALB :443]
-    BackendALB --> BackendTG[Backend Target Group :80]
-    BackendTG --> BackendApp[Backend Service]
-    BackendApp --> Database[Database]
 
 
 * CloudFront acts as the global CDN
