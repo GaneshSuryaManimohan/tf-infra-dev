@@ -22,7 +22,7 @@ resource "null_resource" "frontend_setup" {
     type = "ssh"
     user = "ec2-user"
     password = "DevOps321"
-    host = module.frontend_instance.public_ip # connect via public IP
+    host = module.frontend_instance.private_ip # connect via private IP
   }
   provisioner "file" {
     source = "frontend.sh"

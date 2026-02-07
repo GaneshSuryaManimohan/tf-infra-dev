@@ -180,8 +180,11 @@ This configuration provisions a public Application Load Balancer (ALB) with HTTP
     1. If http://web-dev.surya-devops.site/ == on HTTP (port: 80) then it will return fixed response:
         "This is the default response for the WEB ALB"
 
-    2. If https://web-dev.surya-devops.site/ == on HTTPS (port: 443) then it will return fixed response:
-        "This is the default response for the WEB ALB HTTPS"
+    2. If https://web-dev.surya-devops.site/ == on HTTPS (port: 443) then it will return fixed response 
+        - when Frontend is not configured:
+          "This is the default response for the WEB ALB HTTPS"
+        - when Frontend is configured:
+            Expense App will be displayed
 
 
 #### Frontend Infrastructure – Terraform
@@ -327,5 +330,100 @@ This ensures:
     proxy_pass https://backend.example.com;
 
 
+### CloudFront CDN – Web Frontend (Terraform)
+This Terraform configuration provisions an AWS CloudFront distribution in front of a web application and maps it to a custom domain using Route 53.
+It is designed to improve performance, security, and scalability for frontend traffic.
 
+    📌 Architecture Overview
+User
+  ↓
+CloudFront (CDN)
+  ↓
+ALB / Web Application
 
+* CloudFront acts as the global CDN
+* Origin is a web endpoint (typically ALB-backed)
+* Route 53 provides DNS mapping
+* HTTPS is enforced end-to-end
+
+🧱 Resources Created
+
+    🌍 CloudFront Distribution
+
+* Custom origin pointing to: web-<environment>.<zone_name> `# web-dev.surya-devops.site`
+* HTTPS-only communication between CloudFront and origin
+* TLS 1.2 enforced
+* Compression enabled
+
+    🌐 Route 53 DNS Record
+
+* Alias A record: web-cdn.<zone_name> `web-cdn.surya-devops.site`
+* Points directly to the CloudFront distribution
+* No public IPs required (AWS-managed alias)
+
+    🔁 Origin Configuration
+* origin_protocol_policy = "https-only"
+* origin_ssl_protocols   = ["TLSv1.2"]
+
+* CloudFront communicates with the origin only over HTTPS
+* Prevents insecure backend access
+* http_port = 80 is mandatory but unused
+
+    ⚡ Cache Behaviors
+🔹 Default Cache Behavior (Dynamic Content)
+
+* Path: /*
+* Allowed methods: `GET, HEAD, OPTIONS, POST, PUT, PATCH, DELETE`
+* Cached methods: `GET, HEAD`
+* Caching: Disabled (dynamic content)
+* Viewer policy: Redirect HTTP → HTTPS
+* Compression: Enabled
+
+Used for:
+
+* API responses
+* Dynamic web content
+* Authenticated traffic
+
+🔹 Ordered Cache Behavior – Images
+
+* Path: /images/*
+* Methods: GET, HEAD, OPTIONS
+* Caching: Enabled
+* TTL:
+    - Default: 1 day
+    - Max: 1 year
+* Compression: Enabled
+
+Used for:
+
+* Static images
+* Media assets
+
+🔹 Ordered Cache Behavior – Static Assets
+
+* Path: /static/*
+* Methods: GET, HEAD, OPTIONS
+* Caching: Enabled
+* TTL:
+    - Default: 1 day
+    - Max: 1 year
+* Compression: Enabled
+
+Used for:
+
+* JS, CSS
+* Frontend static bundles
+
+🔐 Security Controls
+🔒 HTTPS Enforcement
+
+* Viewer protocol policy: `redirect-to-https`
+
+* Minimum TLS version: `TLSv1.2_2021`
+
+🌍 Geo Restriction (Whitelist)
+locations = ["US", "IN", "GB", "DE"]
+
+* Content is served only to these countries
+* Requests from other regions are blocked
