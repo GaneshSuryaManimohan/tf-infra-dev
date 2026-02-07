@@ -346,7 +346,8 @@ flowchart LR
     Nginx -->|/api| BackendALB[Backend ALB :443]
     BackendALB --> BackendTG[Backend Target Group :80]
     BackendTG --> BackendApp[Backend Service]
-    BackendApp --> Database
+    BackendApp --> Database[Database]
+
 
 * CloudFront acts as the global CDN
 * Origin is a web endpoint (typically ALB-backed)
