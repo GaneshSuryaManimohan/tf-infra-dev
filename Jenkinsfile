@@ -60,12 +60,12 @@ pipeline {
                     params.action == 'Destroy'
                 }
             }
-        steps {
-            sh """
-            cd 01-vpc
-            terraform destroy -auto-approve
-            """
-            echo "Destryoing Terraform..."
+            steps {
+                sh """
+                cd 01-vpc
+                terraform destroy -auto-approve
+                """
+                echo "Destryoing Terraform..."
             }
         }
     }
@@ -81,3 +81,4 @@ pipeline {
             echo 'shows upon failure'
         }
     }
+}
