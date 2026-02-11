@@ -17,7 +17,6 @@ pipeline {
         stage('Plan') {
             steps {
                 sh 'echo This is Test'
-                sh 'env'
             }
         }
         stage('Deploy') {
