@@ -33,7 +33,7 @@ pipeline {
         }
         success {
             echo 'Shows Only upon success'
-            cleanWs()
+            cleanWs() // this ensure to delete the workspace after build is success
         }
         failure {
             echo 'shows upon failure'
