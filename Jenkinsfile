@@ -82,4 +82,3 @@ pipeline {
             echo 'shows upon failure'
         }
     }
-}
