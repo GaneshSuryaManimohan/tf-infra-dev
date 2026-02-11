@@ -33,6 +33,7 @@ pipeline {
         }
         success {
             echo 'Shows Only upon success'
+            cleanWs()
         }
         failure {
             echo 'shows upon failure'
