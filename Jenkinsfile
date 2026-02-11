@@ -10,6 +10,7 @@ pipeline {
     parameters {
         choice(name: 'action', choices: ['Apply', 'Destroy'], description: 'Pick something')
     }
+    // Initializing .tf
     stages {
         stage('Init') {
             steps {
@@ -19,6 +20,7 @@ pipeline {
                 """
             }
         }
+    // Terraform Plan
         stage('Plan') {
             when {
                 expression {
@@ -38,7 +40,6 @@ pipeline {
                     params.action == 'Apply'
                 }
             }
-
             input {
         message "Approve Terraform Apply?"
         ok "Deploy"
@@ -49,7 +50,7 @@ pipeline {
                  cd 01-vpc
                  terraform apply -auto-approve
                 """
-                echo "Deploying..."
+                echo "Applying Terraform..."
             }
         }
         
@@ -59,17 +60,13 @@ pipeline {
                     params.action == 'Destroy'
                 }
             }
-
-            input {
-        message "Approve Terraform Destroy?"
-        ok "Destroy"
     }
             steps {
                 sh """
                  cd 01-vpc
                  terraform destroy -auto-approve
                 """
-                echo "Deploying..."
+                echo "Destryoing Terraform..."
             }
         }
     }
