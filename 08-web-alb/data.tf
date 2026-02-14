@@ -18,7 +18,3 @@ data "aws_route53_zone" "existing" {
 data "aws_ssm_parameter" "acm_certificate_arn" {
   name = "/${var.project_name}/${var.environment}/acm_certificate_arn"
 }
-
-data "aws_lb" "web_alb" {
-  name = "expense-dev-web-alb"
-}
